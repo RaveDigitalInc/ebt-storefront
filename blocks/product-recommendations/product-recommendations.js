@@ -52,8 +52,9 @@ const recommendationsQuery = `query GetRecommendations(
 
 let unitsPromise;
 
-function renderPlaceholder(block) {
-  block.innerHTML = `<h2></h2>
+function renderPlaceholder(block, className = 'recommendation-0') {
+  block.innerHTML += `<div class="${className}">
+  <h2></h2>
   <div class="scrollable">
     <div class="product-grid">
       ${[...Array(5)].map(() => `
@@ -62,7 +63,7 @@ function renderPlaceholder(block) {
         </div>
       `).join('')}
     </div>
-  </div>`;
+  </div></div>`;
 }
 
 function renderItem(unitId, product) {
@@ -120,38 +121,50 @@ function renderItem(unitId, product) {
 
 function renderItems(block, results) {
   // Render only first recommendation
-  const [recommendation] = results;
+  var [recommendation] = results;
   if (!recommendation) {
     // Hide block content if no recommendations are available
     block.textContent = '';
     return;
   }
 
-  window.adobeDataLayer.push((dl) => {
-    dl.push({ event: 'recs-unit-impression-render', eventInfo: { ...dl.getState(), unitId: recommendation.unitId } });
-  });
+  //Customization: Render all avaialble recommendations
 
-  // Title
-  block.querySelector('h2').textContent = recommendation.storefrontLabel;
+  const recLength = results.length;
 
-  // Grid
-  const grid = block.querySelector('.product-grid');
-  grid.innerHTML = '';
-  const { productsView } = recommendation;
-  productsView.forEach((product) => {
-    grid.appendChild(renderItem(recommendation.unitId, product));
-  });
+  for (var i = 0; i < recLength; i++) {
+    
+    let parentClass = 'recommendation-'+ i; 
+    recommendation = results[i];
 
-  const inViewObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        window.adobeDataLayer.push((dl) => {
-          dl.push({ event: 'recs-unit-view', eventInfo: { ...dl.getState(), unitId: recommendation.unitId } });
-        });
-      }
+    renderPlaceholder(block, parentClass);
+
+    window.adobeDataLayer.push((dl) => {
+      dl.push({ event: 'recs-unit-impression-render', eventInfo: { ...dl.getState(), unitId: recommendation.unitId } });
     });
-  }, { threshold: 0.5 });
-  inViewObserver.observe(block);
+
+    // Title
+    block.querySelector(`.${parentClass} h2`).textContent = recommendation.storefrontLabel;
+
+    // Grid
+    const grid = block.querySelector(`.${parentClass} .product-grid`);
+    grid.innerHTML = '';
+    const { productsView } = recommendation;
+    productsView.forEach((product) => {
+      grid.appendChild(renderItem(recommendation.unitId, product));
+    });
+
+    const inViewObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          window.adobeDataLayer.push((dl) => {
+            dl.push({ event: 'recs-unit-view', eventInfo: { ...dl.getState(), unitId: recommendation.unitId } });
+          });
+        }
+      });
+    }, { threshold: 0.5 });
+    inViewObserver.observe(block);
+  }
 }
 
 const mapProduct = (product, index) => ({
@@ -250,7 +263,7 @@ export default async function decorate(block) {
   if (config.typeid) {
     filters.typeId = config.typeid;
   }
-  renderPlaceholder(block);
+  //renderPlaceholder(block);
 
   const context = {};
   let visibility = !isMobile;
