@@ -478,3 +478,7 @@ body.columns main > .section:empty {
 main[hidden] {
   display: none !important;
 }
+
+.product-list-page-container .h-full{
+  height: auto !important;
+}
