@@ -137,6 +137,10 @@ function renderItems(block, results) {
     let parentClass = 'recommendation-'+ i; 
     recommendation = results[i];
 
+    // Don't show block if no products in recommendation response from server
+    if(recommendation.totalProducts == 0)
+      continue;
+
     renderPlaceholder(block, parentClass);
 
     window.adobeDataLayer.push((dl) => {
